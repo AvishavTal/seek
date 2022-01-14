@@ -16,41 +16,50 @@
 
 #define FIRST_FILE_IDX 2
 
-#define OPEN_FILE_MSG "can not open the file: \n"
 
-#define BIG_OFFSET_MSG "the offset recived is grater than the size of the file.\n"
-
-void check_input(int argc, char **argv);
 
 void check_number_of_args(int argc);
 
-void check_offset(long offset, const char *end);
+long set_offset(char *offset_str);
 
-void print_char_in_all_files(long offset, char **files, int n_files);
-
-void print_char_in_file(long int offset, const char *file_name);
-
-void set_records(record *records, long offset, int n_records, char **file_names);
+record * set_records(long offset, int n_records, char **file_names);
 
 void print_records(record *records, int n_records);
 
+void delete_records(record *records, int n_records);
+
 int main(int argc, char **argv) {
-    int long offset;
-    char *end;
+    long offset;
     char **files;
     int n_files;
     record *records;
     check_number_of_args(argc);
-    offset= strtol(argv[OFFSET_IDX],&end,OFFSET_BASE);
-    check_offset(offset, end);
+    offset=set_offset(argv[OFFSET_IDX]);
     files=argv+FIRST_FILE_IDX;
     n_files=argc-FIRST_FILE_IDX;
-    records=(record *) malloc(n_files*sizeof (record));
-    set_records(records, offset, n_files, files);
+    records=set_records(offset, n_files, files);
     print_records(records, n_files);
+    delete_records(records, n_files);
     return 0;
 }
 
+/**
+ * free the memory used for the records array
+ * @param records
+ * @param n_records
+ */
+void delete_records(record *records, int n_records) {
+    while (n_records){
+        delete_record(records[--n_records]);
+    }
+    free(records);
+}
+
+/**
+ * print the records in the given records array
+ * @param records records to print
+ * @param n_records size of the array
+ */
 void print_records(record *records, int n_records) {
     int i;
     for ( i = 0; i < n_records; ++i) {
@@ -58,60 +67,51 @@ void print_records(record *records, int n_records) {
     }
 }
 
-void set_records(record *records, long offset, int n_records, char **file_names) {
+/**
+ * set record that hold the char at the offset and the name of the file for each file.
+ * @param offset
+ * @param n_records
+ * @param file_names
+ * @return array of records
+ */
+record *set_records(long offset, int n_records, char **file_names) {
+    record *records;
     int i;
+    records=(record *) malloc(n_records*sizeof (record));
+    if (records==NULL){
+        printf("memory problem.");
+        exit(3);
+    }
     for (i=0;i<n_records;++i){
-        records[i]= init_record(file_names[i],offset);
-    }
-}
-
-void print_char_in_all_files(long offset, char **files, int n_files) {
-    int i;
-    for (i = 0; i < n_files; ++i) {
-        print_char_in_file(offset-1, files[i]);
-    }
-}
-
-void print_char_in_file(long offset, const char *file_name) {
-    FILE *fp;
-    printf("%s\n",file_name);
-    fp= fopen(file_name,"r");
-    if (fp==NULL){
-        printf(OPEN_FILE_MSG);
-    } else{
-        long file_size;
-        long int start;
-        start= ftell(fp);
-        fseek(fp,0,SEEK_END);
-        file_size= ftell(fp);
-        fseek(fp,start,SEEK_SET);
-        printf("the begining in %ld\n", ftell(fp));
-
-        printf("the size of %s is %ld\n",file_name,file_size);
-        printf("the offset is: %ld\n",offset);
-        if (offset>file_size){
-            printf(BIG_OFFSET_MSG);
-        } else{
-            int res;
-            fseek(fp,offset,SEEK_SET);
-            res= fgetc(fp);
-            printf("%c\n",res);
+        records[i]=init_record(file_names[i],offset);
+        if (records[i]==NULL){
+            printf("memory problem.");
+            exit(3);
         }
     }
+    return records;
 }
 
-void check_offset(long offset, const char *end) {
-    if (offset<MIN_OFFSET || *end){
+/**
+ * set the offset. exit if invalid offset.
+ * @param offset_str string representation of the offset
+ * @return the offset
+ */
+long set_offset(char *offset_str) {
+    int long offset;
+    char *end;
+    offset=strtol(offset_str,&end,OFFSET_BASE);
+    if (offset < MIN_OFFSET || *end){
         printf(INVALID_OFFSET_MSG);
         exit(2);
     }
+    return offset;
 }
 
-void check_input(int argc, char **argv) {
-
-
-}
-
+/**
+ * check if the program received enough arguments. exit if not.
+ * @param argc number of argument received.
+ */
 void check_number_of_args(int argc) {
     if (argc<MIN_ARGC){
         printf(TOO_FEW_ARGS_MSG);

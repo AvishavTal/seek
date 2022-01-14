@@ -5,6 +5,9 @@
 #define CANT_OPEN_FILE -1
 #define TOO_BIG_OFFSET_CODE -2
 
+/**
+ * hold the name of file and asci code in the file at offset if available
+ */
 struct record{
     const char *file_name;
     long offset;
@@ -15,6 +18,20 @@ void set_asci(record record);
 
 void print_error_msg(record record);
 
+/**
+ * delete given record
+ * @param record
+ */
+void delete_record(record record){
+    free(record);
+}
+
+/**
+ * initialize record with path to file and offset
+ * @param file_name path to file
+ * @param offset
+ * @return record
+ */
 record init_record(const char *file_name, long offset){
     record result;
     result=(record)malloc(sizeof (struct record));
@@ -24,6 +41,10 @@ record init_record(const char *file_name, long offset){
     return result;
 }
 
+/**
+ * set the asci atribute of the given record if possible, information otherwise
+ * @param record
+ */
 void set_asci(record record) {
     FILE *file;
     file= fopen(record->file_name,"r");
@@ -43,6 +64,10 @@ void set_asci(record record) {
     }
 }
 
+/**
+ * print the given record
+ * @param record
+ */
 void print_record(record record) {
     if (record->asci<0){
         print_error_msg(record);
@@ -51,6 +76,10 @@ void print_record(record record) {
     }
 }
 
+/**
+ * print why the wanted asci code is not availble
+ * @param record
+ */
 void print_error_msg(record record) {
     switch (record->asci) {
         case CANT_OPEN_FILE:
